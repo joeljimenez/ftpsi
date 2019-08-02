@@ -1,0 +1,48 @@
+tabla categeria
+
+id_categoria string
+nombre_Categoria string
+estado_categoria string
+
+
+tabla producto 
+id_producto string
+nombre_producto string
+codigo_producto string
+cantidad_producto   int
+precio_producto int
+tamano_producto string
+costo_envio boolean 
+id_categoria (relacion de dos tablas) string
+
+
+tabla usuario
+
+nombre
+apellido
+email
+direccion
+pais
+password
+estado
+rol
+
+
+tabla transaccion
+
+id_trasacion
+id_usuario
+id_producto
+cantidad_pedida
+fecha
+
+
+tabla_compra
+
+id_compra string
+id_usuario string
+total_comprado double
+pagado boolean
+fecha
+
+
