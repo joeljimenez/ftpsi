@@ -7,6 +7,9 @@ const user = require('../mdelos/model_user');
 const categories = require('../mdelos/model_categoria');
 const productosModel = require('../mdelos/model_producto');
 
+var upload = require('express-fileupload');
+
+app.use(upload({ useTempFiles: true }));
 
 /*==========================================
 Login
@@ -454,7 +457,7 @@ app.get('/product/category/:id', (req, res) => {
         });
 });
 
-
+// ELiminar productos
 app.delete('/product/delete/:id', (req, res) => {
     var id_producto = req.params.id
     productosModel.findByIdAndDelete(id_producto, (err, producto) => {
@@ -501,23 +504,150 @@ app.put('/product/update/:id', (req, res) => {
     productos.findByIdAndUpdate(id_producto, request, { new: true, context: 'query' }, (err, productoBD) => {
         if (err) {
             res.status(400).json({
-                exito: false,
+                success: false,
                 err: `No se encontro registro con el Id ${id_producto}`
             });
         }
 
         res.json({
-            exito: true,
+            success: true,
             producto: productoBD
         });
 
     });
 });
 
-
-
 //subida de archivo
+/*========================================
+:tipo = al nombre de la carpeta donde voy a guardar la imagen que son categorias y productos son als dos carpetas y los dos tipos permitidos , el :id es el id de la categoria o producto la cual se va actualizar la imagen
+======================================== */
+app.put('/cargarImagen/:tipo/:id', (req, res) => {
 
+    let tipo = req.params.tipo;
+    let id = req.params.id;
+
+    // validar si existe algun archivo
+    if (!req.files) {
+        res.json({
+            success: false,
+            err: 'No se encontro archivo disponible'
+        });
+    } else {
+        let archivo = req.files.archivo;
+        let nombre_archivo = archivo.name.split('.');
+        let ext = nombre_archivo[1];
+        console.log(nombre_archivo);
+        //cambiando archivo
+
+        let nombre_save = `${id}-${nombre_archivo[0]}.${ext}`;
+
+        // sube la imagen
+        archivo.mv(`public/galeria/${tipo}/${nombre_save}`, (err) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    err
+                });
+            }
+        });
+
+        /*   imageneUsuario(id, res, nombre_save); */
+        if (tipo === "productos") {
+
+            // codigo para gurdar el nombre a la base de datos.
+            productosModel.findById(id, (err, producto) => {
+
+                if (err) {
+
+                    res.status(500).json({
+                        exito: false,
+                        err
+                    });
+
+                }
+
+                if (!producto) {
+                    res.status(400).json({
+
+                        exito: false,
+                        err: {
+                            message: 'El usuario No existe'
+                        }
+                    });
+                }
+
+
+                producto.img = nombre_save;
+                producto.save((err, producto) => {
+                    if (err) {
+                        res.status(500).json({
+                            exito: false,
+                            err
+                        });
+                    }
+
+                    res.json({
+                        exito: true,
+                        producto
+                    })
+                });
+
+
+            });
+
+        } else if (tipo == "categorias") {
+
+            // codigo para gurdar el nombre a la base de datos.
+            categories.findById(id, (err, categoria) => {
+
+                if (err) {
+
+                    res.status(500).json({
+                        exito: false,
+                        err
+                    });
+
+                }
+
+                if (!categoria) {
+                    res.status(400).json({
+
+                        exito: false,
+                        err: {
+                            message: 'El usuario No existe'
+                        }
+                    });
+                }
+
+
+                categoria.imagen = nombre_save;
+                categoria.save((err, categoria) => {
+                    if (err) {
+                        res.status(500).json({
+                            exito: false,
+                            err
+                        });
+                    }
+
+                    res.json({
+                        exito: true,
+                        categoria
+                    })
+                });
+
+
+            })
+        }
+    }
+
+
+});
+
+/*===========================================================
+cuando  haces el get de producto para ver la imagen debes de colocar esta ruta
+http://localhost:3000/public/galeria/categorias/'nombre de la imagen'
+http://localhost:3000/public/galeria/productos/'nombre de la imagen'
+=========================================================== */
 
 
 /*====================================================
