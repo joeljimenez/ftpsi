@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const user = require('../mdelos/model_user');
 const categories = require('../mdelos/model_categoria');
-const product = require('../mdelos/model_producto');
+const productosModel = require('../mdelos/model_producto');
 
 
 /*==========================================
@@ -279,9 +279,8 @@ app.get('/category/:id', (req, res) => {
         if (err) {
             res.json({
                 success: false,
-                err: {
-                    message: `No se encontro registro con el Id ${id_category}`
-                }
+                err: `No se encontro registro con el Id ${id_category}`
+
             });
         }
 
@@ -298,14 +297,14 @@ app.delete('/category/delete/:id', (req, res) => {
     categories.findByIdAndDelete(id_category, (err, category) => {
         if (err) {
             res.json({
-                exito: false,
+                success: false,
                 err
 
             });
         }
         if (category == null) {
             res.json({
-                exito: false,
+                success: false,
                 err: {
                     message: 'Categoria no encontrado'
                 }
@@ -313,7 +312,7 @@ app.delete('/category/delete/:id', (req, res) => {
         }
 
         res.json({
-            exito: true,
+            success: true,
             category
         });
     });
@@ -329,10 +328,10 @@ app.put('/category/update/:id', (req, res) => {
         estado: request.estado
     };
 
-    categories.findByIdAndUpdate(id_category, actualizar, (err, categoDB) => {
+    categories.findByIdAndUpdate(id_category, actualizar, { new: true, context: 'query' }, (err, categoDB) => {
         if (err) {
             res.json({
-                exito: false,
+                success: false,
                 err
 
             });
@@ -341,7 +340,7 @@ app.put('/category/update/:id', (req, res) => {
 
 
         res.json({
-            exito: true,
+            success: true,
             categoria: categoDB
         });
     });
@@ -349,6 +348,180 @@ app.put('/category/update/:id', (req, res) => {
 
 // rutas para los productos
 
+
+// crear productos
+app.post('/product/create', (req, res) => {
+
+    var request = req.body;
+
+    let producto = new productosModel({
+        nombre: request.nombre,
+        codigo: request.codigo,
+        cantidad: request.cantidad,
+        precio: request.precio,
+        tamano: request.tamano,
+        costo_envio: request.costo_envio,
+        descripcion: request.descripcion,
+        img: request.img,
+        estado: request.estado,
+        id_categories: request.id_categories,
+    });
+
+
+    producto.save((err, producto) => {
+        if (err) {
+            res.json({
+                success: false,
+                err
+            });
+        } else {
+
+            res.json({
+                success: true,
+                producto
+            });
+        }
+
+    });
+
+});
+
+// traer todos los productos
+app.get('/product/all', (req, res) => {
+
+
+    productosModel.find({ estado: true })
+        .sort({ _id: 1 })
+        .exec((err, productos) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    err
+                });
+            }
+
+            res.json({
+                success: true,
+                productos
+
+
+            });
+        });
+});
+
+//traer un productos
+
+app.get('/product/:id', (req, res) => {
+    //id de la categoria
+    var id_producto = req.params.id;
+
+    productosModel.findById({ _id: id_producto }, (err, prodcuto) => {
+        if (err) {
+            res.json({
+                success: false,
+                err: `No se encontro registro con el Id ${id_producto}`
+            });
+        }
+
+        res.json({
+            success: true,
+            prodcuto
+        });
+    });
+});
+
+// buscar los productos por categoria
+app.get('/product/category/:id', (req, res) => {
+
+    var id = req.params.id;
+
+    productosModel.find({ id_categories: id, estado: true })
+        .exec((err, producto) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    err: 'No existe categoria'
+
+                });
+            }
+
+            res.json({
+                success: true,
+                producto,
+
+
+            });
+        });
+});
+
+
+app.delete('/product/delete/:id', (req, res) => {
+    var id_producto = req.params.id
+    productosModel.findByIdAndDelete(id_producto, (err, producto) => {
+        if (err) {
+            res.json({
+                success: false,
+                err
+
+            });
+        }
+        if (producto == null) {
+            res.json({
+                success: false,
+                err: `El producto con ID ${id_productos} no EXISTE`
+            })
+        }
+
+        res.json({
+            success: true,
+            producto
+        });
+    });
+});
+
+
+// actualizar un Producto
+app.put('/product/update/:id', (req, res) => {
+    //underscore pick solo coloca los campos que se quieren actualizar en la base de datos
+    var request = req.body;
+
+    if (request.img == null) {
+        productosModel.findById({ _id: id_producto }, (err, prodcuto) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    err: `No se encontro registro con el Id ${id_producto}`
+                });
+            }
+            request.img = prodcuto.img;
+
+        });
+    }
+    var id_producto = req.params.id
+    productos.findByIdAndUpdate(id_producto, request, { new: true, context: 'query' }, (err, productoBD) => {
+        if (err) {
+            res.status(400).json({
+                exito: false,
+                err: `No se encontro registro con el Id ${id_producto}`
+            });
+        }
+
+        res.json({
+            exito: true,
+            producto: productoBD
+        });
+
+    });
+});
+
+
+
 //subida de archivo
+
+
+
+/*====================================================
+subida de imagen de productos y categoria
+ ====================================================*/
 
 module.exports = app;
